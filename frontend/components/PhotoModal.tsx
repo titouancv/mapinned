@@ -2,9 +2,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Send, Pencil, Check } from "lucide-react";
+import { X, Send, Pencil, Check, Sparkles } from "lucide-react";
 import { Photo } from "./Map";
 import { authClient } from "@/lib/auth-client";
+import { analyzeImageWithGemma } from "@/lib/gemma";
 
 type Comment = {
   id: string;
@@ -30,6 +31,7 @@ export default function PhotoModal({
   const [newComment, setNewComment] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [description, setDescription] = useState(
     selectedPhoto.description || ""
   );
@@ -58,6 +60,20 @@ export default function PhotoModal({
 
     fetchPhotoDetails();
   }, [selectedPhoto.id]);
+
+  const handleGenerateDescription = async () => {
+    setIsGenerating(true);
+    setDescription("");
+    try {
+      await analyzeImageWithGemma(selectedPhoto.url, (chunk) => {
+        setDescription((prev) => prev + chunk);
+      });
+    } catch (error) {
+      console.error("Failed to generate description", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleUpdateDescription = async () => {
     if (!session) return;
@@ -160,11 +176,28 @@ export default function PhotoModal({
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full p-2 border rounded text-gray-700 text-sm focus:outline-none focus:border-blue-500"
+                  className={`w-full p-2 border rounded text-sm focus:outline-none ${
+                    isGenerating
+                      ? " animate-pulse text-violet-700"
+                      : " text-gray-700"
+                  }`}
                   rows={3}
-                  placeholder="Add a description..."
+                  placeholder={
+                    isGenerating
+                      ? " Generation in progress..."
+                      : " Add a description..."
+                  }
                 />
                 <div className="flex flex-col gap-1">
+                  <button
+                    onClick={handleGenerateDescription}
+                    disabled={isGenerating}
+                    className={`p-1 text-violet-500 hover:bg-violet-50 rounded ${
+                      isGenerating ? "animate-pulse" : ""
+                    }`}
+                  >
+                    <Sparkles size={18} />
+                  </button>
                   <button
                     onClick={handleUpdateDescription}
                     className="p-1 text-green-500 hover:bg-green-50 rounded"
