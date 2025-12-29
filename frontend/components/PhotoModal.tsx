@@ -45,7 +45,7 @@ export default function PhotoModal({
     const fetchPhotoDetails = async () => {
       try {
         const res = await fetch(
-          `http://localhost:3001/photos/${selectedPhoto.id}`
+          `${process.env.NEXT_PUBLIC_API_URL}/photos/${selectedPhoto.id}`
         );
         if (res.ok) {
           const data = await res.json();
@@ -80,7 +80,7 @@ export default function PhotoModal({
 
     try {
       const res = await fetch(
-        `http://localhost:3001/photos/${selectedPhoto.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/photos/${selectedPhoto.id}`,
         {
           method: "PATCH",
           headers: {
@@ -112,7 +112,7 @@ export default function PhotoModal({
 
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/comments", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -170,106 +170,109 @@ export default function PhotoModal({
               <X />
             </button>
           </div>
-          <div className="p-2 border-b border-gray-100 relative group">
-            {isEditing ? (
-              <div className="flex gap-2 items-start">
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className={`w-full p-2 border rounded text-sm focus:outline-none ${
-                    isGenerating
-                      ? " animate-pulse text-violet-700"
-                      : " text-gray-700"
-                  }`}
-                  rows={3}
-                  placeholder={
-                    isGenerating
-                      ? " Generation in progress..."
-                      : " Add a description..."
-                  }
-                />
-                <div className="flex flex-col gap-1">
-                  <button
-                    onClick={handleGenerateDescription}
-                    disabled={isGenerating}
-                    className={`p-1 text-violet-500 hover:bg-violet-50 rounded ${
-                      isGenerating ? "animate-pulse" : ""
-                    }`}
-                  >
-                    <Sparkles size={18} />
-                  </button>
-                  <button
-                    onClick={handleUpdateDescription}
-                    className="p-1 text-green-500 hover:bg-green-50 rounded"
-                  >
-                    <Check size={18} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsEditing(false);
-                      setDescription(selectedPhoto.description || "");
-                    }}
-                    className="p-1 text-red-500 hover:bg-red-50 rounded"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex w-full justify-between items-start">
+          <div className="overflow-y-auto flex-1 flex flex-col">
+            <div className="p-2 border-b border-gray-100 relative group">
+              {isEditing ? (
                 <div className="flex gap-2 items-start">
-                  {selectedPhoto.description ? (
-                    <p className="text-gray-700">{selectedPhoto.description}</p>
-                  ) : (
-                    <p className="text-gray-400 italic">
-                      No description available.
-                    </p>
-                  )}
-                </div>
-                {session?.user?.id === selectedPhoto.userId && (
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className={`w-full p-2 border rounded text-sm focus:outline-none ${
+                      isGenerating
+                        ? " animate-pulse text-violet-700"
+                        : " text-gray-700"
+                    }`}
+                    rows={3}
+                    placeholder={
+                      isGenerating
+                        ? " Generation in progress..."
+                        : " Add a description..."
+                    }
+                  />
                   <div className="flex flex-col gap-1">
                     <button
-                      onClick={() => setIsEditing(true)}
-                      className="p-1 text-gray-600 hover:text-gray-300"
+                      onClick={handleGenerateDescription}
+                      disabled={isGenerating}
+                      className={`p-1 text-violet-500 hover:bg-violet-50 rounded ${
+                        isGenerating ? "animate-pulse" : ""
+                      }`}
                     >
-                      <Pencil size={18} />
+                      <Sparkles size={18} />
+                    </button>
+                    <button
+                      onClick={handleUpdateDescription}
+                      className="p-1 text-green-500 hover:bg-green-50 rounded"
+                    >
+                      <Check size={18} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditing(false);
+                        setDescription(selectedPhoto.description || "");
+                      }}
+                      className="p-1 text-red-500 hover:bg-red-50 rounded"
+                    >
+                      <X size={18} />
                     </button>
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-2 space-y-4">
-            {comments.length === 0 ? (
-              <p className="text-gray-400 text-center text-sm">
-                No comments yet.
-              </p>
-            ) : (
-              comments.map((comment) => (
-                <div key={comment.id} className="flex gap-3">
-                  {comment.user?.image ? (
-                    <img
-                      src={comment.user.image}
-                      alt={comment.user.name}
-                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-bold flex-shrink-0">
-                      {comment.user?.name?.charAt(0).toUpperCase() || "?"}
+                </div>
+              ) : (
+                <div className="flex w-full justify-between items-start">
+                  <div className="flex gap-2 items-start">
+                    {selectedPhoto.description ? (
+                      <p className="text-gray-700">
+                        {selectedPhoto.description}
+                      </p>
+                    ) : (
+                      <p className="text-gray-400 italic">
+                        No description available.
+                      </p>
+                    )}
+                  </div>
+                  {session?.user?.id === selectedPhoto.userId && (
+                    <div className="flex flex-col gap-1">
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="p-1 text-gray-600 hover:text-gray-300"
+                      >
+                        <Pencil size={18} />
+                      </button>
                     </div>
                   )}
-                  <div>
-                    <p className="text-sm font-semibold text-black">
-                      {comment.user?.name || "Unknown"}
-                    </p>
-                    <p className="text-sm text-gray-700">{comment.content}</p>
-                  </div>
                 </div>
-              ))
-            )}
-          </div>
+              )}
+            </div>
 
+            <div className="flex-1 p-2 space-y-4">
+              {comments.length === 0 ? (
+                <p className="text-gray-400 text-center text-sm">
+                  No comments yet.
+                </p>
+              ) : (
+                comments.map((comment) => (
+                  <div key={comment.id} className="flex gap-3">
+                    {comment.user?.image ? (
+                      <img
+                        src={comment.user.image}
+                        alt={comment.user.name}
+                        className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-bold flex-shrink-0">
+                        {comment.user?.name?.charAt(0).toUpperCase() || "?"}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-semibold text-black">
+                        {comment.user?.name || "Unknown"}
+                      </p>
+                      <p className="text-sm text-gray-700">{comment.content}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
           <div className="p-2 border-t border-gray-200 bg-gray-50">
             <form onSubmit={handlePostComment} className="flex gap-2">
               <textarea

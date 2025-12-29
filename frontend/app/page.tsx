@@ -59,7 +59,7 @@ export default function Home() {
         const result = await uploadRes.json();
         const url = result.data.url;
 
-        await fetch("http://localhost:3001/photos", {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/photos`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -91,7 +91,10 @@ export default function Home() {
           <div className="p-6 text-center">
             <h1 className="text-3xl font-bold text-blue-800">mapinned</h1>
             <p className="mt-2 text-sm text-gray-600">
-              Partage tes lieux préférés sur la carte, avec photos et souvenirs.
+              Mapinned is a web application that allows users to upload photos,
+              automatically extract their GPS location, and display them on an
+              interactive map. Users can view photos, add descriptions (manually
+              or AI-generated), and comment on them.
             </p>
           </div>
 
@@ -130,18 +133,18 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col relative">
       <div className="absolute top-4 left-4 z-10 flex gap-2">
-        <div className="bg-white rounded shadow">
+        <div className="bg-white hover:bg-red-50 rounded shadow">
           <div
-            className="flex p-2 gap-2 items-center text-red-800 hover:text-red-500 cursor-pointer"
+            className="flex p-2 gap-2 items-center text-red-800 cursor-pointer"
             onClick={signOut}
           >
             <p className="hidden md:block">Log out</p>
             <LogOut />
           </div>
         </div>
-        <div className="bg-white rounded shadow">
+        <div className="bg-white hover:bg-blue-50 rounded shadow">
           <div
-            className="flex p-2 gap-2 items-center text-blue-800 hover:text-blue-500 cursor-pointer"
+            className="flex p-2 gap-2 items-center text-blue-800 cursor-pointer"
             onClick={importPhotos}
           >
             <p className="hidden md:block">Import photos</p>

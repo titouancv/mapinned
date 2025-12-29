@@ -16,7 +16,7 @@ export async function analyzeImageWithGemma(
         content: [
           {
             type: "text",
-            text: "Summarize the visual content of the image in one or two sentences and nothing else.",
+            text: "Provide a technical and concise description of the image content. Focus on visual elements, composition, and lighting. Do not use markdown, bullet points, or any formatting. Output plain text only.",
           },
           {
             type: "image_url",
