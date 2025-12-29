@@ -1,196 +1,109 @@
-Great, that changes two important constraints. Below is an updated Strategist plan, adapted to:
+# Mapinned
 
-- Image storage via Foldr
-- A strict 4-hour delivery window
-- Still clean, production-oriented, but intentionally simplified where appropriate
-  I’ll explicitly note where tradeoffs are made due to the time limit.
+Mapinned is a production-ready web application that allows users to upload photos, automatically extract their GPS location, and display them on an interactive map. It leverages modern web technologies to ensure scalability, performance, and a seamless user experience.
 
-1. Updated Technology Stack (4-Hour Optimized)
-   Frontend
+## 🏗 Architecture & Technology Stack
 
-- Next.js (App Router, TypeScript)
-- MapLibre GL JS
-- Tailwind CSS (minimal styling)
-- Native fetch
-  Backend
-- NestJS
-  - REST only
-  - Minimal modules
-- better-auth
-  _ Google OAuth
-  _ Cookie-based session
-  Database
-- PostgreSQL
-  _ Prisma ORM
-  _ No PostGIS (store lat/lng as floats)
-  Image Storage
-- Foldr
-  _ Direct upload from frontend
-  _ Store only Foldr file reference + public URL \* No CDN configuration needed (Foldr handles this)
-  AI
-- OpenRouter
-  - Google Vision / Gemini
-  - Optional async call after upload
+To build this application in a clean, scalable, and production-ready way, we have chosen the following stack:
 
-2. Architecture (Simplified but Clean)
-   High-Level Architecture
-   [ Next.js Frontend ]
-   | |
-   | | Upload Image
-   | v
-   | [ Foldr Storage ]
-   |
-   | REST API
-   v
-   [ NestJS Backend ]
-   |
-   v
-   [ PostgreSQL ]
-   |
-   v
-   [ OpenRouter AI ]
+### Frontend
 
-Why This Architecture Fits 4 Hours
+- **Framework**: **Next.js 15 (App Router)** - For server-side rendering, SEO, and robust routing.
+- **Language**: **TypeScript** - For type safety and maintainability.
+- **Styling**: **Tailwind CSS** - For rapid, utility-first styling.
+- **Map**: **MapLibre GL JS** - An open-source, high-performance mapping library.
+- **State Management**: React Hooks & Context (sufficient for this scale).
 
-- No pre-signed URLs logic
-- No complex geospatial queries
-- No background jobs
-- No event queues
-- Minimal abstractions, clear separation
+### Backend
 
-3. Foldr Image Storage Strategy
-   Upload Flow with Foldr
-1. User selects an image in the browser
-1. Frontend uploads directly to Foldr API
-1. Foldr returns:{
-1. "id": "file_xxx",
-1. "url": "https://cdn.foldr.space/..."
-1. }
-1.
-1. Frontend sends metadata to backend:{
-1. "foldrFileId": "file_xxx",
-1. "imageUrl": "...",
-1. "latitude": 48.85,
-1. "longitude": 2.35
-1. }
-1.
-1. Backend saves metadata in PostgreSQL
-1. (Optional) Backend calls AI for description
-   ✅ Backend never handles binary files✅ Upload is fast✅ Minimal backend logic
+- **Framework**: **NestJS** - A progressive Node.js framework for building efficient, scalable server-side applications. It provides a modular architecture and strong dependency injection.
+- **Language**: **TypeScript**.
+- **API Style**: **REST** - Standard, cacheable, and easy to consume.
 
-1. Backend Structure (Time-Constrained)
-   src/
-   ├── auth/
-   ├── photos/
-   │ ├── photos.controller.ts
-   │ ├── photos.service.ts
-   ├── comments/
-   ├── ai/
-   ├── prisma/
-   └── main.ts
+### Database
 
-Core Endpoints
-Method Endpoint Description
-GET /photos List all photos
-POST /photos Create photo entry
-GET /photos/:id Photo + comments
-POST /comments Add comment
-GET /auth/me Current user
-Database Models (Minimal)
-model User {
-id String @id @default(uuid())
-email String @unique
-name String?
-avatarUrl String?
-photos Photo[]
-comments Comment[]
-}
+- **Database**: **PostgreSQL** - A powerful, open-source object-relational database system.
+- **ORM**: **Prisma** - For type-safe database access and easy schema management.
 
-model Photo {
-id String @id @default(uuid())
-imageUrl String
-foldrFileId String
-latitude Float
-longitude Float
-aiDescription String?
-userId String
-user User @relation(fields: [userId], references: [id])
-comments Comment[]
-createdAt DateTime @default(now())
-}
+### Storage
 
-model Comment {
-id String @id @default(uuid())
-content String
-photoId String
-userId String
-createdAt DateTime @default(now())
-}
+- **Service**: **ImgBB** (Demo) / **AWS S3** (Production) - For scalable object storage of image files. The backend stores only the reference URLs.
 
-5. Data Flow (End-to-End)
-   Upload → Map
-   User
-   ↓
-   Select image
-   ↓
-   Upload to Foldr
-   ↓
-   Get public URL + fileId
-   ↓
-   Send metadata to NestJS
-   ↓
-   Save to PostgreSQL
-   ↓
-   Frontend fetches photos
-   ↓
-   Markers rendered on MapLibre
+### Authentication
 
-AI Description (Optional, Non-Blocking)
+- **Library**: **Better Auth** - A comprehensive authentication library for TypeScript.
+- **Strategy**: **Google OAuth** - Secure and convenient social login.
+- **Session**: Cookie-based sessions for security.
 
-- Triggered after photo creation
-- Backend sends image URL to OpenRouter
-- Stores short description
-- Frontend displays when available
-  If AI fails → app still works.
+### AI Integration
 
-6. Authentication Flow (Fast Setup)
-1. User clicks “Sign in with Google”
-1. better-auth handles OAuth
-1. Backend creates session cookie
-1. Frontend uses authenticated routes
-   No refresh tokens, no roles, no permissions system.
+- **Service**: **Google Gemini (via OpenRouter)** - For analyzing images and generating automatic descriptions.
 
-1. Deployment (Fast & Simple)
-   Local (Demo/Test)
+---
 
-- .env for secrets
-- Local PostgreSQL via Docker
-- Foldr API key
-  Optional Production (If Needed)
-- Frontend: Vercel
-- Backend: Fly.io / Render
-- Database: Supabase Postgres
-  Deployment kept optional due to time constraint.
+## 📐 System Structure
 
-8. 4-Hour Time Breakdown (Strict)
-   Task Time
-   Project scaffolding (Next + Nest) 20 min
-   Prisma + DB models 20 min
-   Google auth (better-auth) 40 min
-   Foldr upload integration 30 min
-   Photo APIs (CRUD) 30 min
-   MapLibre setup 30 min
-   Photo popup + comments UI 30 min
-   AI integration (optional) 20 min
-   Basic testing & polish 20 min
-   Total: ~4 hours
+### Database Schema (Prisma)
 
-9. Conscious Tradeoffs (Explicit)
-   Because of the 4h constraint:
+- **User**: Stores user profile (name, email, avatar).
+- **Session/Account**: Manages authentication states.
+- **Photo**: Stores image URL, GPS coordinates (latitude/longitude), description, and owner reference.
+- **Comment**: Stores user comments on photos.
 
-- No background workers
-- No EXIF server validation
-- No pagination or clustering
-- No moderation system
-- Minimal error handling
-  But:✅ Clean separation✅ Replaceable storage✅ Scalable architecture✅ Production-ready foundation
+### API Services
+
+1.  **Auth Service**: Manages login/logout and session validation.
+2.  **Photos Service**: Handles CRUD operations for photos, including ownership verification.
+3.  **AI Service**: Interfaces with the LLM to generate descriptions.
+
+---
+
+## 🔄 Data Flow: From Upload to Map
+
+1.  **User Action**: User selects a photo in the frontend.
+2.  **Client-Side Processing**:
+    - The browser extracts EXIF data (GPS coordinates) using `exifr`.
+    - The file is uploaded directly to the Storage Provider (ImgBB) to offload bandwidth from the backend.
+3.  **API Request**:
+    - The frontend sends the returned Image URL + GPS Coordinates to the NestJS Backend (`POST /photos`).
+4.  **Backend Processing**:
+    - Validates the session (Auth Guard).
+    - Stores the metadata in PostgreSQL via Prisma.
+    - (Async) Triggers the AI Service to analyze the image URL and update the description.
+5.  **Map Update**:
+    - The frontend receives the new photo object.
+    - The map component refreshes or adds the new marker dynamically.
+
+---
+
+## 🚀 Deployment Strategy
+
+### Local Development
+
+- **Docker Compose**: To spin up the PostgreSQL database.
+- **npm/yarn**: To run Frontend and Backend in watch mode.
+
+### Production Deployment
+
+- **Frontend**: **Vercel** - Optimized for Next.js, providing edge caching and CI/CD.
+- **Backend**: **Railway** or **Render** - For hosting the Node.js/NestJS service.
+- **Database**: **Supabase** or **Neon** - Managed PostgreSQL instances.
+
+---
+
+# 8. Project Roadmap
+
+| Step | Phase                     | Description                                                                                                                                                                                      | Estimated Time |
+| ---: | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------- |
+|    1 | Project Setup             | Rapid initialization of the Next.js (frontend) and NestJS (backend) projects, including minimal architecture setup, startup scripts, and a scalable folder structure prepared for future growth. | 40 minutes     |
+|    2 | Database & Models         | Definition of core Prisma models (users, photos, comments), basic relationships, initial migration, and database connection setup.                                                               | 30 minutes     |
+|    3 | Authentication            | Integration of Google authentication using **better-auth**, basic session handling, and protection of main application routes.                                                                   | 30 minutes     |
+|    4 | Image Upload              | Integration of the **Imgbb** service for image uploads, handling API responses, and storing image URLs in the database.                                                                          | 30 minutes     |
+|    5 | Photo APIs                | Implementation of core CRUD endpoints for photos (create, read, delete), including basic request validation.                                                                                     | 30 minutes     |
+|    6 | User Interface – Photos   | Frontend UI implementation for photo display, including gallery view, detail popup/modal, and basic navigation.                                                                                  | 30 minutes     |
+|    7 | User Interface – Comments | Implementation of comment creation and display, without advanced UI/UX optimizations.                                                                                                            | 20 minutes     |
+|    8 | AI Integration (Optional) | Quick connection to an AI service (e.g., tag or description generation) as a technical proof of concept only.                                                                                    | 20 minutes     |
+|    9 | Basic Testing & Polishing | Manual testing of core user flows, quick bug fixes, code cleanup, and preparation for a live demo.                                                                                               | 60 minutes     |
+|      |
+
+---
