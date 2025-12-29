@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import PhotoModal from "./PhotoModal";
+import { photosService } from "@/services/photos.service";
 
 export type Photo = {
   id: string;
@@ -18,7 +19,7 @@ export type Photo = {
   };
 };
 
-export default function Map() {
+export default function Map({ refreshTrigger }: { refreshTrigger?: number }) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
@@ -68,11 +69,8 @@ export default function Map() {
   }, [lng, lat, zoom]);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/photos`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Network response was not ok");
-        return res.json();
-      })
+    photosService
+      .getAll()
       .then((data) => {
         if (Array.isArray(data)) {
           setPhotos(data);
@@ -82,7 +80,7 @@ export default function Map() {
         }
       })
       .catch((err) => console.error("Failed to fetch photos:", err));
-  }, []);
+  }, [refreshTrigger]);
 
   useEffect(() => {
     if (!map.current) return;
@@ -129,7 +127,10 @@ export default function Map() {
 
   return (
     <div className="relative w-full h-screen">
-      <div ref={mapContainer} className="absolute top-0 left-0 w-full h-full" />
+      <div
+        ref={mapContainer}
+        className="absolute top-0 left-0 w-full h-full bg-white"
+      />
 
       {selectedPhoto && (
         <>

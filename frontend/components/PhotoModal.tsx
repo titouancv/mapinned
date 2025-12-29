@@ -4,7 +4,8 @@
 import React, { useState, useEffect } from "react";
 import { X, Send, Pencil, Check, Sparkles } from "lucide-react";
 import { Photo } from "./Map";
-import { authClient } from "@/lib/auth-client";
+import { authService } from "@/services/auth.service";
+import { photosService } from "@/services/photos.service";
 import { analyzeImageWithGemma } from "@/lib/gemma";
 
 type Comment = {
@@ -26,7 +27,7 @@ export default function PhotoModal({
   setSelectedPhoto: React.Dispatch<React.SetStateAction<Photo | null>>;
   onPhotoUpdated?: (photo: Photo) => void;
 }) {
-  const { data: session } = authClient.useSession();
+  const { data: session } = authService.useSession();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -44,14 +45,9 @@ export default function PhotoModal({
   useEffect(() => {
     const fetchPhotoDetails = async () => {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/photos/${selectedPhoto.id}`
-        );
-        if (res.ok) {
-          const data = await res.json();
-          if (data.comments) {
-            setComments(data.comments);
-          }
+        const data = await photosService.getOne(selectedPhoto.id);
+        if (data.comments) {
+          setComments(data.comments);
         }
       } catch (error) {
         console.error("Failed to fetch comments", error);
@@ -79,28 +75,18 @@ export default function PhotoModal({
     if (!session) return;
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/photos/${selectedPhoto.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ description }),
-          credentials: "include",
-        }
+      const updatedPhoto = await photosService.updateDescription(
+        selectedPhoto.id,
+        description
       );
 
-      if (res.ok) {
-        const updatedPhoto = await res.json();
-        const newPhoto = {
-          ...selectedPhoto,
-          description: updatedPhoto.description,
-        };
-        setSelectedPhoto(newPhoto);
-        onPhotoUpdated?.(newPhoto);
-        setIsEditing(false);
-      }
+      const newPhoto = {
+        ...selectedPhoto,
+        description: updatedPhoto.description,
+      };
+      setSelectedPhoto(newPhoto);
+      onPhotoUpdated?.(newPhoto);
+      setIsEditing(false);
     } catch (error) {
       console.error("Failed to update description", error);
     }
@@ -112,37 +98,28 @@ export default function PhotoModal({
 
     setIsLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const comment = await photosService.addComment(
+        selectedPhoto.id,
+        newComment
+      );
+
+      const newCommentObj: Comment = {
+        ...comment,
+        user: {
+          name: session.user.name,
+          image: session.user.image,
         },
-        body: JSON.stringify({
-          photoId: selectedPhoto.id,
-          content: newComment,
-        }),
-        credentials: "include",
-      });
+      };
 
-      if (res.ok) {
-        const comment = await res.json();
-        const newCommentObj: Comment = {
-          ...comment,
-          user: {
-            name: session.user.name,
-            image: session.user.image,
-          },
-        };
-
-        setComments([newCommentObj, ...comments]);
-        setNewComment("");
-      }
+      setComments([newCommentObj, ...comments]);
+      setNewComment("");
     } catch (error) {
       console.error("Failed to post comment", error);
     } finally {
       setIsLoading(false);
     }
   };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
       <div className="relative max-h-full md:max-w-[80%] overflow-hidden bg-white rounded-lg shadow-2xl flex flex-col md:flex-row pointer-events-auto">
