@@ -7,8 +7,8 @@ import {
   Headers as RequestHeaders,
 } from '@nestjs/common';
 import { AppService } from './app.service';
-import { prisma } from './db';
-import { auth } from './auth';
+import { prisma } from './prisma/db';
+import { auth } from './auth/auth';
 
 @Controller()
 export class AppController {
