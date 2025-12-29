@@ -19,7 +19,7 @@ Mapinned is a web application that allows users to upload photos, automatically 
 - **Map**: MapLibre GL JS
 - **Icons**: Lucide React
 - **Auth**: Better Auth
-- **AI**: OpenRouter SDK (Google Gemma 2)
+- **AI**: OpenRouter SDK (Google Gemma 3)
 
 ## Getting Started
 
@@ -65,7 +65,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## Project Structure
 
-- `app/`: Next.js App Router pages and layouts.
-- `components/`: Reusable UI components (Map, PhotoModal, etc.).
-- `lib/`: Utility functions and configurations (Auth, AI).
-- `public/`: Static assets.
+- app/ : Next.js App Router pages and layouts.
+- components/ : Reusable UI components (Map, PhotoModal, etc.).
+- lib/ : Shared utilities and core configurations (authentication, AI, helpers).
+- services/ : External service integrations and API clients.
+- public/ : Static assets (images, icons, fonts).
