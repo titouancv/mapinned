@@ -1,16 +1,17 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { X } from "lucide-react";
+import PhotoModal from "./PhotoModal";
 
-type Photo = {
+export type Photo = {
   id: string;
   url: string;
   description: string | null;
   latitude: number;
   longitude: number;
+  userId: string;
   user: {
     name: string;
     image: string | null;
@@ -20,6 +21,7 @@ type Photo = {
 export default function Map() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
   const [lng] = useState(0);
   const [lat] = useState(0);
   const [zoom] = useState(2);
@@ -86,7 +88,15 @@ export default function Map() {
     if (!map.current) return;
     if (!Array.isArray(photos)) return;
 
+    // Clear existing markers
+    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current = [];
+
+    const bounds = new maplibregl.LngLatBounds();
+
     photos.forEach((photo) => {
+      bounds.extend([photo.longitude, photo.latitude]);
+
       const el = document.createElement("div");
       el.className = "relative group cursor-pointer";
 
@@ -106,10 +116,15 @@ export default function Map() {
         setSelectedPhoto(photo);
       });
 
-      new maplibregl.Marker({ element: el })
+      const marker = new maplibregl.Marker({ element: el })
         .setLngLat([photo.longitude, photo.latitude])
         .addTo(map.current!);
+      markersRef.current.push(marker);
     });
+
+    if (photos.length > 0) {
+      map.current.fitBounds(bounds, { padding: 100, maxZoom: 12 });
+    }
   }, [photos]);
 
   return (
@@ -117,50 +132,21 @@ export default function Map() {
       <div ref={mapContainer} className="absolute top-0 left-0 w-full h-full" />
 
       {selectedPhoto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="relative max-w-4xl w-full max-h-full overflow-auto bg-white rounded-lg shadow-2xl flex flex-col md:flex-row">
-            <button
-              onClick={() => setSelectedPhoto(null)}
-              className="absolute top-2 right-2 text-gray-400 text-4xl font-bold hover:text-gray-300"
-            >
-              <X />
-            </button>
-            <div className=" md:w-2/3 bg-black flex items-center justify-center">
-              <img
-                src={selectedPhoto.url}
-                alt={selectedPhoto.description || "Photo"}
-                className="max-h-[80vh] w-auto object-contain"
-              />
-            </div>
-            <div className="md:w-1/3 p-6 flex flex-col">
-              <div className="flex items-center gap-3 mb-4">
-                {selectedPhoto.user.image ? (
-                  <img
-                    src={selectedPhoto.user.image}
-                    alt={selectedPhoto.user.name}
-                    className="w-10 h-10 rounded-full"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-bold">
-                    {selectedPhoto.user.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <span className="font-bold text-lg text-black">
-                  {selectedPhoto.user.name}
-                </span>
-              </div>
-              {selectedPhoto.description && (
-                <p className="text-gray-700 mb-6">
-                  {selectedPhoto.description}
-                </p>
-              )}
-              {/* Placeholder for comments section */}
-              <div className="mt-auto pt-4 border-t border-gray-200">
-                <p className="text-gray-500 text-sm">Comments coming soon...</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+            onClick={() => setSelectedPhoto(null)}
+          />
+          <PhotoModal
+            selectedPhoto={selectedPhoto}
+            onPhotoUpdated={(updatedPhoto) => {
+              setPhotos((prev) =>
+                prev.map((p) => (p.id === updatedPhoto.id ? updatedPhoto : p))
+              );
+            }}
+            setSelectedPhoto={setSelectedPhoto}
+          />
+        </>
       )}
     </div>
   );
