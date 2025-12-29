@@ -69,4 +69,3 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - components/ : Reusable UI components (Map, PhotoModal, etc.).
 - lib/ : Shared utilities and core configurations (authentication, AI, helpers).
 - services/ : External service integrations and API clients.
-- public/ : Static assets (images, icons, fonts).
